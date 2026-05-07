@@ -5,3 +5,4 @@ export 'add_expense_screen.dart';
 export 'dashboard_screen.dart';
 export 'statistics_screen.dart';
 export 'profile_screen.dart';
+export 'all_expenses_screen.dart';

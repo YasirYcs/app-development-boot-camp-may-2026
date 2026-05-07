@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/expense_provider.dart';
 import '../utils/index.dart';
 import '../widgets/expense_card.dart';
+import 'all_expenses_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -111,7 +112,15 @@ class DashboardScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Recent Expenses', style: AppTextStyles.heading2),
-              TextButton(onPressed: () {}, child: const Text('View all')),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AllExpensesScreen()),
+                  );
+                },
+                child: const Text('View all'),
+              ),
             ],
           ),
 

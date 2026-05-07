@@ -8,7 +8,8 @@ import '../utils/text_styles.dart';
 import '../utils/formatters.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  final Expense? expenseToEdit;
+  const AddExpenseScreen({super.key, this.expenseToEdit});
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -17,15 +18,21 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late TextEditingController _titleController;
   late TextEditingController _amountController;
-  ExpenseCategory _selectedCategory = ExpenseCategory.food;
-  DateTime _selectedDate = DateTime.now();
+  late ExpenseCategory _selectedCategory;
+  late DateTime _selectedDate;
   final _formKey = GlobalKey<FormState>();
+
+  bool get isEditing => widget.expenseToEdit != null;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController();
-    _amountController = TextEditingController();
+    _titleController = TextEditingController(text: widget.expenseToEdit?.title ?? '');
+    _amountController = TextEditingController(
+      text: widget.expenseToEdit != null ? widget.expenseToEdit!.amount.toString() : '',
+    );
+    _selectedCategory = widget.expenseToEdit?.category ?? ExpenseCategory.food;
+    _selectedDate = widget.expenseToEdit?.date ?? DateTime.now();
   }
 
   @override
@@ -42,30 +49,41 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       final amount = double.parse(_amountController.text.trim());
 
       try {
-        await context.read<ExpenseProvider>().addExpense(
-          title: title,
-          amount: amount,
-          category: _selectedCategory,
-          date: _selectedDate,
-        );
+        if (isEditing) {
+          final updatedExpense = widget.expenseToEdit!.copyWith(
+            title: title,
+            amount: amount,
+            category: _selectedCategory,
+            date: _selectedDate,
+          );
+          await context.read<ExpenseProvider>().updateExpense(updatedExpense);
+        } else {
+          await context.read<ExpenseProvider>().addExpense(
+            title: title,
+            amount: amount,
+            category: _selectedCategory,
+            date: _selectedDate,
+          );
+        }
 
         if (mounted) {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Expense added successfully!'),
+              content: Text(isEditing ? 'Expense updated!' : 'Expense added!'),
               backgroundColor: AppColors.success,
               duration: const Duration(seconds: 2),
             ),
           );
 
-          // Clear form
-          _titleController.clear();
-          _amountController.clear();
-          setState(() {
-            _selectedCategory = ExpenseCategory.food;
-            _selectedDate = DateTime.now();
-          });
+          // Clear form if not editing (just in case)
+          if (!isEditing) {
+            _titleController.clear();
+            _amountController.clear();
+            setState(() {
+              _selectedCategory = ExpenseCategory.food;
+              _selectedDate = DateTime.now();
+            });
+          }
 
           // Navigate back after delay
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -78,7 +96,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Error adding expense'),
+              content: const Text('Error saving expense'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -107,7 +125,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Add Expense'), elevation: 0),
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Expense' : 'Add Expense'),
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -120,9 +141,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'e.g., Lunch, Gas, Shopping',
-                  prefixIcon: const Icon(Icons.label),
+                  prefixIcon: Icon(Icons.label),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -141,9 +162,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _amountController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: '0.00',
-                  prefixIcon: const Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.attach_money),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -239,8 +260,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _saveExpense,
-                  icon: const Icon(Icons.check),
-                  label: const Text('Add Expense'),
+                  icon: Icon(isEditing ? Icons.save : Icons.check),
+                  label: Text(isEditing ? 'Update Expense' : 'Add Expense'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       vertical: AppSpacing.md,

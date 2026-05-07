@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MExpenses',
+      title: 'My Expenses',
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       routes: {
